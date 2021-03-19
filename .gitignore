@@ -1,0 +1,7 @@
+data.zip
+data/
+.DS_Store
+__MACOSX/
+.ipynb_checkpoints/
+commands.txt
+__pycache__/
