@@ -31,7 +31,6 @@ def test_encoder():
                 expected_output = inputs, #here, training is the same as our hopeful prediction
                 epochs = 10, 
                 learning_rate = 20,
-                lam = 0, 
                 verbose=False) #dont want the output to be messy 
 	assert amanda_auto.final_score < 0.1, "Fail 13"
 
@@ -60,7 +59,6 @@ def test_NN():
                 expected_output = y_train, #here, training is the same as our hopeful prediction
                 epochs = 100, 
                 learning_rate = 20,
-                lam = 0, 
                 verbose=False)
 	predict = amanda_auto.predict(X_test, task="round")
 	assert (predict == np.asarray([[0],[1]])).all() , "Fail 15"
