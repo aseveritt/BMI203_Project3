@@ -137,7 +137,7 @@ class NeuralNetwork(object):
 
 	Parameters: 
 		setup_nodes (np array): default (8,3,8). The number of nodes in each of the three layers (input, hidden, output). The input layer much match the dimensions of the expected input data used in fit(). The program is not adpated for multiple hidden layers yet. 
-		activation (bool): default "sigmoid". Activation funtion for all layers. options are "sigmoid" or "relu"
+		activation (bool): default "sigmoid". Activation funtion for all layers. options are "sigmoid", "relu", "tanh"
 		seed (int): default 1. Seed for random weight initialization to ensure reproducible values. 
 	Returns:
 		initialized network (of class Neural Network)
@@ -160,7 +160,7 @@ class NeuralNetwork(object):
 	def activation_fnct(self, x):
 		'''Activation functions. 
 
-		| Function takes layer x, a matrix, and calculates the activation function. It will call "self.activation_method" to select which calculation. Current options are sigmoid and relu
+		| Function takes layer x, a matrix, and calculates the activation function. It will call "self.activation_method" to select which calculation. Current options are sigmoid, relu, tanh
 
 		Parameters: 
 			x (np array)
@@ -171,6 +171,10 @@ class NeuralNetwork(object):
 		elif self.activation_method == "relu":
 			#return x * (x > 0)
 			return np.maximum(0,x)
+		elif self.activation_method == "tanh":
+			#val = 2*x
+			#(2.0 / (1.0 + np.exp(-val))) - 1
+			return (np.exp(x)-np.exp(-x))/(np.exp(x)+np.exp(-x))
 		else:
 			print("not adapted for other activation functions"); exit()
 
@@ -192,6 +196,9 @@ class NeuralNetwork(object):
 			x[x<=0] = 0 # the slope for negative values is zero
 			x[x>0] = 1 #the slope for positve values is 1 
 			return x
+		elif self.activation_method == "tanh":
+			t=(np.exp(x)-np.exp(-x))/(np.exp(x)+np.exp(-x))
+			return (1-t**2)
 		else:
 			print("not adapted for other activation functions"); exit()
 
@@ -290,32 +297,31 @@ class NeuralNetwork(object):
 		
 		else:
 		 	print("Amanda, haven't added others"); exit()
-		 	#J = (1/m) * np.sum((y - self.yhat)**2) + ((lam/2) * (np.sum(self.W2**2) + np.sum(self.W1**2)))
-			#return(J)
 
-
-	def update_weights(self, dW1, dW2, db1, db2, learning_rate, m, lam):
+	def update_weights(self, dW1, dW2, db1, db2, learning_rate, m):
 		'''Update layer weights. 
 
-		| AMANDA FIX ME. 
+		| This function will calculate the new weights and bias values given the current neuron deltas and our optimizer parameters (so far just learning rate, I didn't add momentum)
 
 		Parameters: 
-			dW1
-			dW2
-			db1
-			db2
-			learning_rate
-			m
-			lam
+			dW1 (np array): gradient of hidden weights
+			dW2 (np array): gradient of output weights
+			db1 (np array): gradient of hidden biases
+			db2 (np array): gradient of output biases
+			learning_rate (float): how should we traverse this gradient
+			m (int): number of entries in our input (aka 1/m in front of the summations)
 			
 		Returns:
 			error (float)
 		'''
 
-
-		#amanda in your previoius version you had:   a = neuron.weights[j] + self.learn_rate * neuron.delta * inputs[j]
-		self.W1 = self.W1 - learning_rate*(((1/m) * dW1) + lam * self.W1)
-		self.W2 = self.W2 - learning_rate*(((1/m) * dW2) + lam * self.W2)
+		#amanda in your previoius version you had:   a = neuron.weights[j] + -self.learn_rate * neuron.delta * neuron.weights[j]
+		
+		#I've simplified this a bunch now but it comes from 
+		#vector = vector -learn_rate * gradient(vector)
+		#where gradient(vector) = ((1/m) * vector) * vector
+		self.W1 = self.W1 - learning_rate*(((1/m) * dW1) + 0 * self.W1)
+		self.W2 = self.W2 - learning_rate*(((1/m) * dW2) + 0 * self.W2)
 		
 		self.bias1 = self.bias1 - learning_rate*((1/m) * db1)
 		self.bias2 = self.bias2 - learning_rate*((1/m) * db2)
@@ -339,19 +345,19 @@ class NeuralNetwork(object):
 		return(W1, W2, b1, b2)
 
 
-	def fit(self, input_data, expected_output, epochs=10, learning_rate=0.01, lam=0.001, loss_function="SSE", verbose=False):
+	def fit(self, input_data, expected_output, epochs=10, learning_rate=0.01, loss_function="SSE", cc=0.0001, verbose=False):
 		'''Fit/Train the model with inputs and hyperparameters. 
 
 		| Train the model based on the input data to learn the expected output. The function employs batch gradient descent as an optimizer. 
-		| add more?
+		| Training will stop when number of epochs is reached or change in error between epochs is less than cc
 
 		Parameters: 
 			input_data (np array): input data to flow through network. 
 			expected_output (np array): expected final output (classes in NN or identical to input_data in autoencoder)
 			epochs (int): default 10. Number of epochs to run in batch gradient descent
 			learning_rate (float): default 0.01. Learning rate of gradient descent
-			lam (float): default 0.001. AMANDA
 			loss_function (str): default "SSE". Choice of loss function to optimizer; current options are sum of squared error (SSE) and mean squared error (MSE)
+			cc (float): default 0.0001 -- convergence criteria. When change in error is less than this value, stop iterating. 
 			verbose (bool): default False. If True, will iteratively print the error per epoch. 
 		'''
 
@@ -362,7 +368,11 @@ class NeuralNetwork(object):
 		n_entries = input_data.shape[0]  #number of rows in input dataframe
 				# aka "m" in formal gradient descent equation apparently so I switched to that in cost functions. 
 		
-		for i in range(0, epochs):
+		i = 0
+		not_converged = True
+		quitting_time = cc
+		
+		while not_converged:
 			# For every iteration, start our gradients at zero. 
 			dW1, dW2, db1, db2 = self.init_matrices_to_zero()
 
@@ -384,15 +394,24 @@ class NeuralNetwork(object):
 			#Calculate the error in this particular epoch and save it to our final statistics dataframe (used for plotting later)
 			er = self.cost_function(expected_output, loss_function)
 			self.fit_statistics.append([i, er])
-			
 			#or, optionally print to screen if the user wants. 
 			if verbose:
 				print('>epoch=%d, error=%.3f' % (i, er))
 				
-
 			#Use the mean gradients to update our parameters. 
-			self.update_weights(dW1, dW2, db1, db2, learning_rate, n_entries, lam)
+			self.update_weights(dW1, dW2, db1, db2, learning_rate, n_entries)
 
+
+			#Check to see if we're done
+			i+=1
+			if i == epochs:
+				#print("quitting bc epochs")
+				not_converged = False
+
+			if i > 1:
+				if abs(er - self.fit_statistics[-2][1]) <= quitting_time:
+					print("Reached convergence at epoch: ", i)
+					not_converged = False
 
 		#Calculate final score of model. 
 		self.final_score = self.cost_function(expected_output, loss_function)
@@ -401,7 +420,7 @@ class NeuralNetwork(object):
 	def predict(self, input_data, task=None):
 		'''Predict output layer for new inputs
 
-		| words
+		| With the provided input data, what does the model predict as the output.
 
 		Parameters: 
 			input_data (np array): input data to flow through network. This should be new to network and not the training data ideally. 
@@ -426,13 +445,15 @@ class NeuralNetwork(object):
 
 if __name__ == "__main__":
 
+	#sorry im putting my main here again. I know its annoying but I find it way easier to test this way. 
+
 	amanda_auto  = NeuralNetwork(setup_nodes = (8, 3, 8), 
 								activation = "sigmoid", 
 								seed=1)
 
 	x = np.identity(8)
 	y = x
-	amanda_auto.fit(x,y, 1000, 20, 0, loss_function ="SSE", verbose=False)
+	amanda_auto.fit(x, y, epochs=1000, learning_rate=20, loss_function ="MSE", cc =0, verbose=True)
 	print(amanda_auto.final_score)
 	predict = amanda_auto.predict(x, task="round")
 	print("PREDICT", predict)

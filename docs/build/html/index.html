@@ -42,7 +42,7 @@
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>setup_nodes</strong> (<em>np array</em>) – default (8,3,8). The number of nodes in each of the three layers (input, hidden, output). The input layer much match the dimensions of the expected input data used in fit(). The program is not adpated for multiple hidden layers yet.</p></li>
-<li><p><strong>activation</strong> (<em>bool</em>) – default “sigmoid”. Activation funtion for all layers. options are “sigmoid” or “relu”</p></li>
+<li><p><strong>activation</strong> (<em>bool</em>) – default “sigmoid”. Activation funtion for all layers. options are “sigmoid”, “relu”, “tanh”</p></li>
 <li><p><strong>seed</strong> (<em>int</em>) – default 1. Seed for random weight initialization to ensure reproducible values.</p></li>
 </ul>
 </dd>
@@ -55,7 +55,7 @@
 <code class="sig-name descname"><span class="pre">activation_fnct</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Project3.scripts.NN.NeuralNetwork.activation_fnct" title="Permalink to this definition">¶</a></dt>
 <dd><p>Activation functions.</p>
 <div class="line-block">
-<div class="line">Function takes layer x, a matrix, and calculates the activation function. It will call “self.activation_method” to select which calculation. Current options are sigmoid and relu</div>
+<div class="line">Function takes layer x, a matrix, and calculates the activation function. It will call “self.activation_method” to select which calculation. Current options are sigmoid, relu, tanh</div>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -153,11 +153,11 @@
 
 <dl class="py method">
 <dt id="Project3.scripts.NN.NeuralNetwork.fit">
-<code class="sig-name descname"><span class="pre">fit</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lam</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'SSE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Project3.scripts.NN.NeuralNetwork.fit" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">fit</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'SSE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Project3.scripts.NN.NeuralNetwork.fit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit/Train the model with inputs and hyperparameters.</p>
 <div class="line-block">
 <div class="line">Train the model based on the input data to learn the expected output. The function employs batch gradient descent as an optimizer.</div>
-<div class="line">add more?</div>
+<div class="line">Training will stop when number of epochs is reached or change in error between epochs is less than cc</div>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -166,8 +166,8 @@
 <li><p><strong>expected_output</strong> (<em>np array</em>) – expected final output (classes in NN or identical to input_data in autoencoder)</p></li>
 <li><p><strong>epochs</strong> (<em>int</em>) – default 10. Number of epochs to run in batch gradient descent</p></li>
 <li><p><strong>learning_rate</strong> (<em>float</em>) – default 0.01. Learning rate of gradient descent</p></li>
-<li><p><strong>lam</strong> (<em>float</em>) – default 0.001. AMANDA</p></li>
 <li><p><strong>loss_function</strong> (<em>str</em>) – default “SSE”. Choice of loss function to optimizer; current options are sum of squared error (SSE) and mean squared error (MSE)</p></li>
+<li><p><strong>cc</strong> (<em>float</em>) – default 0.0001 – convergence criteria. When change in error is less than this value, stop iterating.</p></li>
 <li><p><strong>verbose</strong> (<em>bool</em>) – default False. If True, will iteratively print the error per epoch.</p></li>
 </ul>
 </dd>
@@ -196,7 +196,7 @@
 <code class="sig-name descname"><span class="pre">predict</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">task</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Project3.scripts.NN.NeuralNetwork.predict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Predict output layer for new inputs</p>
 <div class="line-block">
-<div class="line">words</div>
+<div class="line">With the provided input data, what does the model predict as the output.</div>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -216,21 +216,20 @@
 
 <dl class="py method">
 <dt id="Project3.scripts.NN.NeuralNetwork.update_weights">
-<code class="sig-name descname"><span class="pre">update_weights</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dW1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dW2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lam</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Project3.scripts.NN.NeuralNetwork.update_weights" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">update_weights</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dW1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dW2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Project3.scripts.NN.NeuralNetwork.update_weights" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update layer weights.</p>
 <div class="line-block">
-<div class="line">AMANDA FIX ME.</div>
+<div class="line">This function will calculate the new weights and bias values given the current neuron deltas and our optimizer parameters (so far just learning rate, I didn’t add momentum)</div>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dW1</strong> – </p></li>
-<li><p><strong>dW2</strong> – </p></li>
-<li><p><strong>db1</strong> – </p></li>
-<li><p><strong>db2</strong> – </p></li>
-<li><p><strong>learning_rate</strong> – </p></li>
-<li><p><strong>m</strong> – </p></li>
-<li><p><strong>lam</strong> – </p></li>
+<li><p><strong>dW1</strong> (<em>np array</em>) – gradient of hidden weights</p></li>
+<li><p><strong>dW2</strong> (<em>np array</em>) – gradient of output weights</p></li>
+<li><p><strong>db1</strong> (<em>np array</em>) – gradient of hidden biases</p></li>
+<li><p><strong>db2</strong> (<em>np array</em>) – gradient of output biases</p></li>
+<li><p><strong>learning_rate</strong> (<em>float</em>) – how should we traverse this gradient</p></li>
+<li><p><strong>m</strong> (<em>int</em>) – number of entries in our input (aka 1/m in front of the summations)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
